@@ -20,12 +20,15 @@ package com.github.kklisura.cdt.services.utils;
  * #L%
  */
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import javassist.Modifier;
+import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 /**
  * Proxy utils.
@@ -50,6 +53,8 @@ public final class ProxyUtils {
    */
   @SuppressWarnings("unchecked")
   public static <T> T createProxy(Class<T> clazz, InvocationHandler invocationHandler) {
+    LOGGER.debug("代理方法 createProxy,{},参数{}",clazz.getName(),invocationHandler.getClass());
+
     return (T)
         Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] {clazz}, invocationHandler);
   }
@@ -68,15 +73,26 @@ public final class ProxyUtils {
   @SuppressWarnings("unchecked")
   public static <T> T createProxyFromAbstract(
       Class<T> clazz, Class[] paramTypes, Object[] args, InvocationHandler invocationHandler) {
+    LOGGER.debug("代理方法 createProxyFromAbstract,{},参数{}",clazz.getName(),args);
     ProxyFactory proxyFactory = new ProxyFactory();
     proxyFactory.setSuperclass(clazz);
     proxyFactory.setFilter(method -> Modifier.isAbstract(method.getModifiers()));
     try {
       return (T)
           proxyFactory.create(
-              paramTypes,
-              args,
-              (o, method, method1, objects) -> invocationHandler.invoke(o, method, objects));
+                  paramTypes,
+                  args,
+                  new MethodHandler() {
+                    @Override
+                    public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Throwable {
+                      LOGGER.debug("代理方法 createProxyFromAbstract.MethodHandler,{},方法{}，处理方法{} ，参数{}",
+                              self.toString(),thisMethod,proceed,args);
+
+                    return   invocationHandler.invoke(self, thisMethod, args);
+                    }
+                  }
+
+          );
     } catch (Exception e) {
       LOGGER.error("Failed creating proxy from abstract class", e);
       throw new RuntimeException("Failed creating proxy from abstract class", e);

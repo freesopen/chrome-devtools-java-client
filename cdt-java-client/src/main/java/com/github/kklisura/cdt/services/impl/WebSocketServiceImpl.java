@@ -20,25 +20,20 @@ package com.github.kklisura.cdt.services.impl;
  * #L%
  */
 
-import static com.github.kklisura.cdt.services.impl.utils.WebSocketUtils.isTyrusBufferOverflowCloseReason;
-import static com.github.kklisura.cdt.services.utils.ConfigurationUtils.systemProperty;
-
 import com.github.kklisura.cdt.services.WebSocketService;
 import com.github.kklisura.cdt.services.exceptions.WebSocketServiceException;
 import com.github.kklisura.cdt.services.factory.WebSocketContainerFactory;
 import com.github.kklisura.cdt.services.factory.impl.DefaultWebSocketContainerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.function.Consumer;
-import javax.websocket.CloseReason;
-import javax.websocket.DeploymentException;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
-import javax.websocket.WebSocketContainer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.github.kklisura.cdt.services.impl.utils.WebSocketUtils.isTyrusBufferOverflowCloseReason;
+import static com.github.kklisura.cdt.services.utils.ConfigurationUtils.systemProperty;
 
 /**
  * Web socket service implementation.
@@ -96,6 +91,7 @@ public class WebSocketServiceImpl implements WebSocketService {
     try {
       session =
           WEB_SOCKET_CONTAINER.connectToServer(
+
               new Endpoint() {
                 @Override
                 public void onOpen(Session session, EndpointConfig config) {
@@ -114,7 +110,7 @@ public class WebSocketServiceImpl implements WebSocketService {
                   webSocketService.onError(session, thr);
                 }
               },
-              uri);
+                  ClientEndpointConfig.Builder.create().build(), uri);
     } catch (DeploymentException | IOException e) {
       LOGGER.warn("Failed connecting to ws server {}...", uri, e);
       throw new WebSocketServiceException("Failed connecting to ws server {}", e);
@@ -211,6 +207,7 @@ public class WebSocketServiceImpl implements WebSocketService {
 
       if (WebSocketContainerFactory.class.isAssignableFrom(containerFactoryClass)) {
         WebSocketContainerFactory containerFactory = containerFactoryClass.newInstance();
+
         return containerFactory.getWebSocketContainer();
       }
 

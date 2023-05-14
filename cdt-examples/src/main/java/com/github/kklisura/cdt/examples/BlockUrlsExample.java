@@ -20,12 +20,17 @@ package com.github.kklisura.cdt.examples;
  * #L%
  */
 
+import com.github.kklisura.cdt.launch.ChromeArguments;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.protocol.commands.Network;
 import com.github.kklisura.cdt.protocol.commands.Page;
+import com.github.kklisura.cdt.protocol.types.page.FrameTree;
+import com.github.kklisura.cdt.protocol.types.page.ResourceContent;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
+
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 /**
@@ -39,7 +44,8 @@ public class BlockUrlsExample {
     final ChromeLauncher launcher = new ChromeLauncher();
 
     // Launch chrome either as headless (true) or regular (false).
-    final ChromeService chromeService = launcher.launch(false);
+    final ChromeService chromeService = launcher.launch(
+            Paths.get("D:\\ProgramFiles\\chrome-win1125061\\chrome.exe"), ChromeArguments.defaults(false).build());
 
     // Create empty tab ie about:blank.
     final ChromeTab tab = chromeService.createTab();
@@ -52,7 +58,7 @@ public class BlockUrlsExample {
     final Network network = devToolsService.getNetwork();
 
     network.setBlockedURLs(Arrays.asList("*.png", "*.css"));
-    page.onLoadEventFired(event -> devToolsService.close());
+//    page.onLoadEventFired(event -> devToolsService.close());
 
     network.enable();
 
@@ -60,8 +66,10 @@ public class BlockUrlsExample {
     page.enable();
 
     // Navigate to github.com.
-    page.navigate("http://github.com");
-
+    page.navigate("https://m.meituan.com/");
+    FrameTree frameTree = page.getFrameTree();
+    ResourceContent resourceContent = page.getResourceContent(frameTree.getFrame().getId(), frameTree.getFrame().getUrl());
+    System.out.println("网页"+resourceContent.getContent());
     devToolsService.waitUntilClosed();
   }
 

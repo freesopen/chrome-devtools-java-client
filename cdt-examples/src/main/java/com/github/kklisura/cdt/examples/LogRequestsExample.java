@@ -20,6 +20,7 @@ package com.github.kklisura.cdt.examples;
  * #L%
  */
 
+import com.github.kklisura.cdt.launch.ChromeArguments;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.protocol.commands.Network;
 import com.github.kklisura.cdt.protocol.commands.Page;
@@ -41,7 +42,9 @@ public class LogRequestsExample {
     final ChromeLauncher launcher = new ChromeLauncher();
 
     // Launch chrome either as headless (true) or regular (false).
-    final ChromeService chromeService = launcher.launch(false);
+    final ChromeService chromeService = launcher.launch(ChromeArguments.defaults(false)
+
+            .build());
 
     // Create empty tab ie about:blank.
     final ChromeTab tab = chromeService.createTab();
@@ -73,7 +76,7 @@ public class LogRequestsExample {
     network.enable();
 
     // Navigate to github.com.
-    page.navigate("http://github.com");
+    page.navigate("https://www.baidu.com");
 
     devToolsService.waitUntilClosed();
   }

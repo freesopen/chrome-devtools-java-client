@@ -32,9 +32,13 @@ import com.github.kklisura.cdt.services.invocation.CommandInvocationHandler;
 import com.github.kklisura.cdt.services.types.ChromeTab;
 import com.github.kklisura.cdt.services.types.ChromeVersion;
 import com.github.kklisura.cdt.services.utils.ProxyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -44,6 +48,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Chrome service implementation.
@@ -52,7 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ChromeServiceImpl implements ChromeService {
   public static final String ABOUT_BLANK_PAGE = "about:blank";
-
+private static Logger log= LoggerFactory.getLogger(ChromeServiceImpl.class);
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private static final String EMPTY_STRING = "";
@@ -183,17 +188,25 @@ public class ChromeServiceImpl implements ChromeService {
 
       // Create dev tools service.
       ChromeDevToolsServiceImpl chromeDevToolsService =
-          ProxyUtils.createProxyFromAbstract(
-              ChromeDevToolsServiceImpl.class,
-              new Class[] {WebSocketService.class, ChromeDevToolsServiceConfiguration.class},
-              new Object[] {webSocketService, chromeDevToolsServiceConfiguration},
-              (unused, method, args) ->
-                  commandsCache.computeIfAbsent(
-                      method,
-                      key -> {
-                        Class<?> returnType = method.getReturnType();
-                        return ProxyUtils.createProxy(returnType, commandInvocationHandler);
-                      }));
+              ProxyUtils.createProxyFromAbstract(
+                      ChromeDevToolsServiceImpl.class,
+                      new Class[]{WebSocketService.class, ChromeDevToolsServiceConfiguration.class},
+                      new Object[]{webSocketService, chromeDevToolsServiceConfiguration},
+                      new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                          log.debug("代理方法 chromeDevToolsService invoke，{}",method.getName());
+                          return commandsCache.computeIfAbsent(method, new Function<Method, Object>() {
+                            @Override
+                            public Object apply(Method method) {
+                              log.debug("代理方法chromeDevToolsService apply，{}",method.getName());
+                              Class<?> returnType = method.getReturnType();
+                              return ProxyUtils.createProxy(returnType, commandInvocationHandler);
+                            }
+                          });
+                        }
+                      }
+              );
 
       // Register dev tools service with invocation handler.
       commandInvocationHandler.setChromeDevToolsService(chromeDevToolsService);
@@ -268,8 +281,9 @@ public class ChromeServiceImpl implements ChromeService {
 
     try {
       URL uri = new URL(String.format(path, params));
+      log.debug("request,{}",uri.toString());
       connection = (HttpURLConnection) uri.openConnection();
-
+      connection.setRequestMethod("PUT");
       int responseCode = connection.getResponseCode();
       if (HttpURLConnection.HTTP_OK == responseCode) {
         if (Void.class.equals(responseType)) {

@@ -9,8 +9,8 @@
   </appender>
 
 <!--  <logger name="com.github.kklisura.cdt.launch.chrome.output" level="DEBUG" />-->
-
-  <root level="INFO">
+  <logger name="com.github.kklisura" level="DEBUG" />
+  <root level="DEBUG">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

@@ -31,12 +31,18 @@ import java.util.Map;
  */
 public class ChromeArguments {
   public static final String USER_DATA_DIR_ARGUMENT = "user-data-dir";
+  public static String ip="127.0.0.1";
 
   @ChromeArgument("headless")
   private Boolean headless;
 
   @ChromeArgument("remote-debugging-port")
   private Integer remoteDebuggingPort = 0;
+  /**
+   *  ("--remote-allow-origins=http://localhost:9200");
+   */
+  @ChromeArgument("remote-allow-origins")
+  private String remoteAllowOrigins ;
 
   @ChromeArgument("no-default-browser-check")
   private Boolean noDefaultBrowserCheck;
@@ -120,6 +126,10 @@ public class ChromeArguments {
     }
 
     return additionalArguments;
+  }
+
+  public String getRemoteAllowOrigins() {
+    return remoteAllowOrigins;
   }
 
   /**
@@ -329,21 +339,22 @@ public class ChromeArguments {
    */
   public static Builder defaults(boolean headless) {
     Builder builder =
-        new Builder()
-            .noFirstRun()
-            .noDefaultBrowserCheck()
-            .disableBackgroundNetworking()
-            .disableBackgroundTimerThrottling()
-            .disableClientSidePhishingDetection()
-            .disableDefaultApps()
-            .disableExtensions()
-            .disableHangMonitor()
-            .disablePopupBlocking()
-            .disablePromptOnRepost()
-            .disableSync()
-            .disableTranslate()
-            .metricsRecordingOnly()
-            .safebrowsingDisableAutoUpdate();
+            new Builder()
+                    .noFirstRun()
+                    .noDefaultBrowserCheck()
+                    .disableBackgroundNetworking()
+                    .disableBackgroundTimerThrottling()
+                    .disableClientSidePhishingDetection()
+                    .disableDefaultApps()
+                    .disableExtensions()
+                    .disableHangMonitor()
+                    .disablePopupBlocking()
+                    .disablePromptOnRepost()
+                    .disableSync()
+                    .disableTranslate()
+                    .metricsRecordingOnly()
+                    .safebrowsingDisableAutoUpdate()
+                    .remoteAllowOrigins();
 
     if (headless) {
       builder.headless().disableGpu().hideScrollbars().muteAudio();
@@ -417,7 +428,15 @@ public class ChromeArguments {
       arguments.additionalArguments = additionalArguments;
       return this;
     }
+    public Builder remoteAllowOrigins(String ip,Integer port){
+          arguments.remoteAllowOrigins= String.format("http://%s:%d",ip,port);
+          return this;
+    }
 
+    public Builder remoteAllowOrigins(){
+      remoteAllowOrigins(ip,arguments.remoteDebuggingPort);
+      return this;
+    }
     /**
      * Launches chrome with no-default-browser-check param.
      *
